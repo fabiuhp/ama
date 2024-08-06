@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres:latest
-    restart: unless-stopper
+    restart: unless-stopped
     ports:
       - ${WEB_SOCKET_DATABASE_PORT:-5432}:5432
     environment:
