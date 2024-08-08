@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -122,7 +123,31 @@ func (h apiHandler) handleSubscribe(w http.ResponseWriter, r *http.Request) {
 	h.mu.Unlock()
 }
 
-func (h apiHandler) handleCreateRoom(w http.ResponseWriter, r *http.Request) {}
+func (h apiHandler) handleCreateRoom(w http.ResponseWriter, r *http.Request) {
+	type _body struct {
+		Theme string `json:"theme"`
+	}
+	var body _body
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		http.Error(w, "JSON invalido", http.StatusBadRequest)
+		return
+	}
+
+	roomId, err := h.q.InsertRoom(r.Context(), body.Theme)
+	if err != nil {
+		slog.Error("Falhou em criar uma sala", "error", err)
+		http.Error(w, "Erro de servidor", http.StatusInternalServerError)
+		return
+	}
+
+	type response struct {
+		Id string `json:"id"`
+	}
+
+	data, _ := json.Marshal(response{Id: roomId.String()})
+	w.Header().Set("Content-Type", "application/json")
+	_, _ = w.Write(data)
+}
 
 func (h apiHandler) handleGetRooms(w http.ResponseWriter, r *http.Request) {}
 
